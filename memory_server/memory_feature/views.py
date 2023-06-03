@@ -1,38 +1,46 @@
-from rest_framework import generics
-from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Memory
+
+from .models import User
 from .serializers import MemorySerializer
+from uuid import UUID
 
-@api_view(['GET'])
-def memory_list_create(request):
-    if request.method == 'GET':
-        memories = Memory.objects.all()
-        serializer = MemorySerializer(memories, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = MemorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
 
-@api_view(['POST', 'PUT', 'DELETE'])
-def memory_retrieve_update_destroy(request, pk):
-    try:
-        memory = Memory.objects.get(pk=pk)
-    except Memory.DoesNotExist:
-        return Response(status=404)
+class MemoryCreateAPIView(APIView):
+    def post(self, request):
+        user_id = UUID(request.data.get('user_id'))
+        memory_data = request.data.get('memory')
 
-    if request.method == 'GET':
-        serializer = MemorySerializer(memory)
-        return Response(serializer.data)
-    elif request.method == 'PUT':
-        serializer = MemorySerializer(memory, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-    elif request.method == 'DELETE':
-        memory.delete()
-        return Response(status=204)
+        try:
+            user = User.objects.get(uuid=user_id)
+        except User.DoesNotExist:
+            User.objects.create(uuid=user_id)
+
+
+        # Convert UUID to string
+        user_id_str = str(user_id)
+
+        # Assign converted UUID to user field
+        memory_data['user_id'] = user_id_str
+
+        memory_serializer = MemorySerializer(data=memory_data)
+
+        if memory_serializer.is_valid():
+            memory = memory_serializer.create(memory_data)
+
+            response_data = {
+                'status': 'success',
+                'data': {
+                    'userId': user_id,
+                    'memory': {
+                        'muid': str(memory.uuid),
+                        'title': memory.title,
+                        'description': memory.description,
+                        'date': memory.date.isoformat()
+                    }
+                }
+            }
+
+            return Response(response_data, status=201)
+        else:
+            return Response(memory_serializer.errors, status=400)
