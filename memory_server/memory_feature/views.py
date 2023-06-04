@@ -65,3 +65,59 @@ class MemoryCreateAPIView(APIView):
             return Response(response_data, status=201)
         else:
             return Response(memory_serializer.errors, status=400)
+        
+
+    def put(self, request):
+        user_id = request.data.get('userId')
+        memory_data = request.data.get('memory')
+        muid = memory_data['muid']
+
+        try:
+            memory = Memory.objects.get(uuid=muid)
+        except Memory.DoesNotExist:
+            return Response({'error': 'Memory not found.'}, status=404)
+
+        serializer = MemorySerializer(memory, data=memory_data)
+        if serializer.is_valid():
+            memory = serializer.save()
+
+            response_data = {
+                'status': 'success',
+                'data': {
+                    'userId': user_id,
+                    'memory': {
+                        'muid': muid,
+                        'title': memory.title,
+                        'description': memory.description,
+                        'date': memory.date.isoformat()
+                    }
+                }
+            }
+
+            return Response(response_data)
+        else:
+            return Response(serializer.errors, status=400)
+
+
+    def delete(self, request):
+        user_id = request.data.get('userId')
+        memory_uuid = request.data.get('muid')
+
+        try:
+            memory = Memory.objects.get(uuid=memory_uuid)
+        except Memory.DoesNotExist:
+            return Response({'error': 'Memory not found.'}, status=404)
+
+        memory.delete()
+
+        response_data = {
+            'status': 'success',
+            'data': {
+                'userId': user_id,
+                'memoryUUID': memory_uuid
+            }
+        }
+
+        return Response(response_data)
+        
+
