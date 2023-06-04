@@ -1,18 +1,39 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import User
+from .models import User, Memory
 from .serializers import MemorySerializer
 from uuid import UUID
 
 
 class MemoryCreateAPIView(APIView):
+    def get(self, request):
+        uuid_str = request.query_params.get('user_id')
+        user_id_from_request = UUID(uuid_str)
+
+        # Retrieve the memories for the specified user
+        memories = Memory.objects.filter(user__uuid=user_id_from_request)
+
+        # Serialize the memories
+        serializer = MemorySerializer(memories, many=True)
+
+        # Prepare the response data
+        response_data = {
+            'status': 'success',
+            'data': {
+                uuid_str: serializer.data
+            }
+        }
+
+        return Response(response_data)
+
+
     def post(self, request):
         user_id = UUID(request.data.get('user_id'))
         memory_data = request.data.get('memory')
 
         try:
-            user = User.objects.get(uuid=user_id)
+            User.objects.get(uuid=user_id)
         except User.DoesNotExist:
             User.objects.create(uuid=user_id)
 
