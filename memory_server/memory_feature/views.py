@@ -5,10 +5,19 @@ from .models import User, Memory
 from .serializers import MemorySerializer
 from uuid import UUID
 
+user_id_key = 'user_id'
+status_key = 'status'
+status_value = 'success'
+data_key = 'data'
+memory_key = 'memory'
+muid_key = 'muid'
+title_key = 'title'
+description_key = 'description'
+date_key = 'date'
 
 class MemoryCreateAPIView(APIView):
     def get(self, request):
-        uuid_str = request.query_params.get('user_id')
+        uuid_str = request.query_params.get(user_id_key)
         user_id_from_request = UUID(uuid_str)
 
         # Retrieve the memories for the specified user
@@ -19,8 +28,8 @@ class MemoryCreateAPIView(APIView):
 
         # Prepare the response data
         response_data = {
-            'status': 'success',
-            'data': {
+            status_key: status_value,
+            data_key: {
                 uuid_str: serializer.data
             }
         }
@@ -29,8 +38,8 @@ class MemoryCreateAPIView(APIView):
 
 
     def post(self, request):
-        user_id = UUID(request.data.get('user_id'))
-        memory_data = request.data.get('memory')
+        user_id = UUID(request.data.get(user_id_key))
+        memory_data = request.data.get(memory_key)
 
         try:
             User.objects.get(uuid=user_id)
@@ -42,7 +51,7 @@ class MemoryCreateAPIView(APIView):
         user_id_str = str(user_id)
 
         # Assign converted UUID to user field
-        memory_data['user_id'] = user_id_str
+        memory_data[user_id_key] = user_id_str
 
         memory_serializer = MemorySerializer(data=memory_data)
 
@@ -50,14 +59,14 @@ class MemoryCreateAPIView(APIView):
             memory = memory_serializer.create(memory_data)
 
             response_data = {
-                'status': 'success',
-                'data': {
-                    'userId': user_id,
-                    'memory': {
-                        'muid': str(memory.uuid),
-                        'title': memory.title,
-                        'description': memory.description,
-                        'date': memory.date.isoformat()
+                status_key: status_value,
+                data_key: {
+                    user_id_key: user_id,
+                    memory_key: {
+                        muid_key: str(memory.uuid),
+                        title_key: memory.title,
+                        description_key: memory.description,
+                        date_key: memory.date.isoformat()
                     }
                 }
             }
@@ -68,12 +77,12 @@ class MemoryCreateAPIView(APIView):
         
 
     def put(self, request):
-        user_id = request.data.get('userId')
-        memory_data = request.data.get('memory')
-        muid = memory_data['muid']
+        user_id = request.data.get(user_id_key)
+        memory_data = request.data.get(memory_key)
+        muid = memory_data[muid_key]
 
         try:
-            memory = Memory.objects.get(uuid=muid)
+            memory = Memory.objects.get(uuid=muid, user__uuid = user_id)
         except Memory.DoesNotExist:
             return Response({'error': 'Memory not found.'}, status=404)
 
@@ -82,14 +91,14 @@ class MemoryCreateAPIView(APIView):
             memory = serializer.save()
 
             response_data = {
-                'status': 'success',
-                'data': {
-                    'userId': user_id,
-                    'memory': {
-                        'muid': muid,
-                        'title': memory.title,
-                        'description': memory.description,
-                        'date': memory.date.isoformat()
+                status_key: status_value,
+                data_key: {
+                    user_id_key: user_id,
+                    memory_key: {
+                        muid_key: muid,
+                        title_key: memory.title,
+                        description_key: memory.description,
+                        date_key: memory.date.isoformat()
                     }
                 }
             }
@@ -100,21 +109,21 @@ class MemoryCreateAPIView(APIView):
 
 
     def delete(self, request):
-        user_id = request.data.get('userId')
-        memory_uuid = request.data.get('muid')
+        user_id = request.data.get(user_id_key)
+        memory_uuid = request.data.get(muid_key)
 
         try:
-            memory = Memory.objects.get(uuid=memory_uuid)
+            memory = Memory.objects.get(uuid=memory_uuid, user__uuid = user_id)
         except Memory.DoesNotExist:
             return Response({'error': 'Memory not found.'}, status=404)
 
         memory.delete()
 
         response_data = {
-            'status': 'success',
-            'data': {
-                'userId': user_id,
-                'memoryUUID': memory_uuid
+            status_key: status_value,
+            data_key: {
+                user_id_key: user_id,
+                muid_key: memory_uuid
             }
         }
 
