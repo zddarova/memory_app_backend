@@ -113,7 +113,7 @@ class MemoryCreateAPIView(APIView):
         memory_uuid = request.data.get(muid_key)
 
         try:
-            memory = Memory.objects.get(uuid=memory_uuid, user__uuid = user_id)
+            memory = Memory.objects.get(uuid=memory_uuid)
         except Memory.DoesNotExist:
             return Response({'error': 'Memory not found.'}, status=404)
 
