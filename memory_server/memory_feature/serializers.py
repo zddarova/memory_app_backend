@@ -6,7 +6,7 @@ from .models import User, Memory
 class MemorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Memory
-        fields = ['uuid','title', 'description', 'date']
+        fields = ['muid','title', 'description', 'date']
 
     def create(self, data):
         user_id = UUID(data.pop('user_id'))
