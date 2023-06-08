@@ -63,7 +63,7 @@ class MemoryCreateAPIView(APIView):
                 data_key: {
                     user_id_key: user_id,
                     memory_key: {
-                        muid_key: str(memory.uuid),
+                        muid_key: str(memory.muid),
                         title_key: memory.title,
                         description_key: memory.description,
                         date_key: memory.date.isoformat()
@@ -82,7 +82,7 @@ class MemoryCreateAPIView(APIView):
         muid = memory_data[muid_key]
 
         try:
-            memory = Memory.objects.get(uuid=muid, user__uuid = user_id)
+            memory = Memory.objects.get(muid=muid, user__uuid = user_id)
         except Memory.DoesNotExist:
             return Response({'error': 'Memory not found.'}, status=404)
 
@@ -110,10 +110,10 @@ class MemoryCreateAPIView(APIView):
 
     def delete(self, request):
         user_id = request.data.get(user_id_key)
-        memory_uuid = request.data.get(muid_key)
+        muid = request.data.get(muid_key)
 
         try:
-            memory = Memory.objects.get(uuid=memory_uuid)
+            memory = Memory.objects.get(muid=muid)
         except Memory.DoesNotExist:
             return Response({'error': 'Memory not found.'}, status=404)
 
@@ -123,7 +123,7 @@ class MemoryCreateAPIView(APIView):
             status_key: status_value,
             data_key: {
                 user_id_key: user_id,
-                muid_key: memory_uuid
+                muid_key: muid
             }
         }
 
